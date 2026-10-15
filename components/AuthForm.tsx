@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
-import { Button } from "./Button";
+import { Alert, Button, Field, Input } from "@/components/ui";
 
 type Mode = "login" | "signup";
 
@@ -45,48 +45,34 @@ export function AuthForm({ mode }: { mode: Mode }) {
     }
   }
 
-  const inputClass =
-    "w-full rounded-lg border border-black/10 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 dark:border-white/15 dark:bg-white/5 dark:text-white";
-
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       {mode === "signup" && (
-        <div>
-          <label htmlFor="name" className="mb-1.5 block text-sm font-medium">
-            Full name
-          </label>
-          <input
+        <Field id="name" label="Full name">
+          <Input
             id="name"
             name="name"
             type="text"
             required
             autoComplete="name"
             placeholder="Ada Lovelace"
-            className={inputClass}
           />
-        </div>
+        </Field>
       )}
 
-      <div>
-        <label htmlFor="email" className="mb-1.5 block text-sm font-medium">
-          Email
-        </label>
-        <input
+      <Field id="email" label="Email">
+        <Input
           id="email"
           name="email"
           type="email"
           required
           autoComplete="email"
           placeholder="you@company.com"
-          className={inputClass}
         />
-      </div>
+      </Field>
 
-      <div>
-        <label htmlFor="password" className="mb-1.5 block text-sm font-medium">
-          Password
-        </label>
-        <input
+      <Field id="password" label="Password">
+        <Input
           id="password"
           name="password"
           type="password"
@@ -94,15 +80,10 @@ export function AuthForm({ mode }: { mode: Mode }) {
           minLength={8}
           autoComplete={mode === "login" ? "current-password" : "new-password"}
           placeholder="••••••••"
-          className={inputClass}
         />
-      </div>
+      </Field>
 
-      {error && (
-        <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-500/10 dark:text-red-400">
-          {error}
-        </p>
-      )}
+      {error && <Alert tone="error">{error}</Alert>}
 
       <Button type="submit" className="w-full" disabled={loading}>
         {loading

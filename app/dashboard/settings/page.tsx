@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ProfileForm } from "@/components/ProfileForm";
+import { Button, SectionCard } from "@/components/ui";
 import { getCurrentUser } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Settings" };
@@ -17,26 +18,23 @@ export default async function SettingsPage() {
         </p>
       </div>
 
-      <section className="rounded-2xl border border-black/5 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-white/5">
-        <h2 className="text-lg font-semibold">Profile</h2>
-        <p className="mt-1 text-sm text-gray-500">Update your personal information.</p>
-        <div className="mt-6">
-          <ProfileForm initialName={user.name} email={user.email} />
-        </div>
-      </section>
+      <SectionCard title="Profile" description="Update your personal information.">
+        <ProfileForm initialName={user.name} email={user.email} />
+      </SectionCard>
 
-      <section className="rounded-2xl border border-red-200 bg-white p-6 shadow-sm dark:border-red-500/20 dark:bg-white/5">
-        <h2 className="text-lg font-semibold text-red-600 dark:text-red-400">Danger zone</h2>
-        <p className="mt-1 text-sm text-gray-500">
-          Deleting your account is permanent and cannot be undone.
-        </p>
-        <button
+      <SectionCard
+        tone="danger"
+        title="Danger zone"
+        description="Deleting your account is permanent and cannot be undone."
+      >
+        <Button
           type="button"
-          className="mt-4 rounded-lg border border-red-300 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50 dark:border-red-500/40 dark:hover:bg-red-500/10"
+          variant="secondary"
+          className="border-red-300 text-red-600 hover:bg-red-50 dark:border-red-500/40 dark:text-red-400 dark:hover:bg-red-500/10"
         >
           Delete account
-        </button>
-      </section>
+        </Button>
+      </SectionCard>
     </div>
   );
 }
