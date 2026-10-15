@@ -35,6 +35,6 @@ export async function getCurrentUser(): Promise<PublicUser | null> {
   const userId = verifySessionToken(token);
   if (!userId) return null;
 
-  const user = db.getUserById(userId);
+  const user = await db.getUserById(userId);
   return user ? toPublicUser(user) : null;
 }

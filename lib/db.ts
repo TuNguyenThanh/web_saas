@@ -1,13 +1,18 @@
-import { randomUUID } from "crypto";
-import { hashPassword } from "./auth";
+import type {
+  User as PrismaUser,
+  TeamMember as PrismaTeamMember,
+} from "@prisma/client";
+import { prisma } from "./prisma";
 
 /**
- * In-memory data store.
+ * Data access layer.
  *
- * This is intentionally simple so the starter runs with zero setup. Data lives
- * only in the server process and resets on restart. Swap this file for a real
- * database (Prisma, Drizzle, etc.) when you're ready — the rest of the app only
- * depends on the exported `db` functions, not on how they're stored.
+ * Backed by Prisma + SQLite. The rest of the app depends only on the exported
+ * `db` functions and the domain types below — not on Prisma — so the store can
+ * be swapped (e.g. Postgres) by changing this file and the schema alone.
+ *
+ * SQLite stores plan/role/status as strings; the mappers below narrow them back
+ * to the app's union types. Dates are returned as ISO strings for the client.
  */
 
 export type Plan = "free" | "pro" | "enterprise";
@@ -33,116 +38,112 @@ export interface TeamMember {
   invitedAt: string;
 }
 
-interface Store {
-  users: Map<string, User>;
-  usersByEmail: Map<string, string>; // email -> userId
-  teamMembers: Map<string, TeamMember>;
+function toUser(row: PrismaUser): User {
+  return {
+    id: row.id,
+    name: row.name,
+    email: row.email,
+    passwordHash: row.passwordHash,
+    plan: row.plan as Plan,
+    createdAt: row.createdAt.toISOString(),
+  };
 }
 
-// Persist across hot-reloads in dev by hanging the store off globalThis.
-const globalForDb = globalThis as unknown as { __saasStore?: Store };
-
-function createStore(): Store {
-  const store: Store = {
-    users: new Map(),
-    usersByEmail: new Map(),
-    teamMembers: new Map(),
+function toMember(row: PrismaTeamMember): TeamMember {
+  return {
+    id: row.id,
+    name: row.name,
+    email: row.email,
+    role: row.role as MemberRole,
+    status: row.status as MemberStatus,
+    invitedAt: row.invitedAt.toISOString(),
   };
-
-  // Seed a demo account so you can log in immediately.
-  const demo: User = {
-    id: randomUUID(),
-    name: "Demo User",
-    email: "demo@acme.com",
-    passwordHash: hashPassword("password123"),
-    plan: "pro",
-    createdAt: new Date().toISOString(),
-  };
-  store.users.set(demo.id, demo);
-  store.usersByEmail.set(demo.email, demo.id);
-
-  // Seed a few team members for the dashboard.
-  const seedMembers: Omit<TeamMember, "id">[] = [
-    { name: "Demo User", email: "demo@acme.com", role: "owner", status: "active", invitedAt: new Date().toISOString() },
-    { name: "Sam Rivera", email: "sam@acme.com", role: "admin", status: "active", invitedAt: new Date().toISOString() },
-    { name: "Jordan Lee", email: "jordan@acme.com", role: "member", status: "pending", invitedAt: new Date().toISOString() },
-  ];
-  for (const m of seedMembers) {
-    const id = randomUUID();
-    store.teamMembers.set(id, { id, ...m });
-  }
-
-  return store;
 }
-
-const store = globalForDb.__saasStore ?? createStore();
-if (!globalForDb.__saasStore) globalForDb.__saasStore = store;
 
 export const db = {
-  getUserById(id: string): User | undefined {
-    return store.users.get(id);
+  async getUserById(id: string): Promise<User | undefined> {
+    const row = await prisma.user.findUnique({ where: { id } });
+    return row ? toUser(row) : undefined;
   },
 
-  getUserByEmail(email: string): User | undefined {
-    const id = store.usersByEmail.get(email.toLowerCase());
-    return id ? store.users.get(id) : undefined;
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const row = await prisma.user.findUnique({
+      where: { email: email.toLowerCase() },
+    });
+    return row ? toUser(row) : undefined;
   },
 
-  createUser(input: { name: string; email: string; passwordHash: string }): User {
-    const email = input.email.toLowerCase();
-    const user: User = {
-      id: randomUUID(),
-      name: input.name,
-      email,
-      passwordHash: input.passwordHash,
-      plan: "free",
-      createdAt: new Date().toISOString(),
-    };
-    store.users.set(user.id, user);
-    store.usersByEmail.set(email, user.id);
-    return user;
+  async createUser(input: {
+    name: string;
+    email: string;
+    passwordHash: string;
+  }): Promise<User> {
+    const row = await prisma.user.create({
+      data: {
+        name: input.name,
+        email: input.email.toLowerCase(),
+        passwordHash: input.passwordHash,
+        plan: "free",
+      },
+    });
+    return toUser(row);
   },
 
-  updateUser(id: string, patch: Partial<Pick<User, "name" | "plan">>): User | undefined {
-    const user = store.users.get(id);
-    if (!user) return undefined;
-    const updated = { ...user, ...patch };
-    store.users.set(id, updated);
-    return updated;
+  async updateUser(
+    id: string,
+    patch: Partial<Pick<User, "name" | "plan">>,
+  ): Promise<User | undefined> {
+    try {
+      const row = await prisma.user.update({ where: { id }, data: patch });
+      return toUser(row);
+    } catch {
+      return undefined; // no row with that id
+    }
   },
 
   // ----- Team members -----
 
-  listTeamMembers(): TeamMember[] {
-    // Active first, then by invite time.
-    return [...store.teamMembers.values()].sort((a, b) => {
+  async listTeamMembers(): Promise<TeamMember[]> {
+    const rows = await prisma.teamMember.findMany();
+    // Active first, then by invite time (sorted in app code since SQLite can't
+    // order by this custom status ranking).
+    return rows.map(toMember).sort((a, b) => {
       if (a.status !== b.status) return a.status === "active" ? -1 : 1;
       return a.invitedAt.localeCompare(b.invitedAt);
     });
   },
 
-  getTeamMemberByEmail(email: string): TeamMember | undefined {
-    const target = email.toLowerCase();
-    return [...store.teamMembers.values()].find((m) => m.email.toLowerCase() === target);
+  async getTeamMemberByEmail(email: string): Promise<TeamMember | undefined> {
+    const row = await prisma.teamMember.findUnique({
+      where: { email: email.toLowerCase() },
+    });
+    return row ? toMember(row) : undefined;
   },
 
-  inviteTeamMember(input: { email: string; role: MemberRole }): TeamMember {
+  async inviteTeamMember(input: {
+    email: string;
+    role: MemberRole;
+  }): Promise<TeamMember> {
     const email = input.email.toLowerCase();
-    const member: TeamMember = {
-      id: randomUUID(),
-      // Derive a display name from the email local-part until they accept.
-      name: email.split("@")[0].replace(/[._-]+/g, " "),
-      email,
-      role: input.role,
-      status: "pending",
-      invitedAt: new Date().toISOString(),
-    };
-    store.teamMembers.set(member.id, member);
-    return member;
+    const row = await prisma.teamMember.create({
+      data: {
+        // Derive a display name from the email local-part until they accept.
+        name: email.split("@")[0].replace(/[._-]+/g, " "),
+        email,
+        role: input.role,
+        status: "pending",
+      },
+    });
+    return toMember(row);
   },
 
-  removeTeamMember(id: string): boolean {
-    return store.teamMembers.delete(id);
+  async removeTeamMember(id: string): Promise<boolean> {
+    try {
+      await prisma.teamMember.delete({ where: { id } });
+      return true;
+    } catch {
+      return false; // nothing to delete
+    }
   },
 };
 

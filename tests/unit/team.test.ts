@@ -1,8 +1,8 @@
 import { db } from "@/lib/db";
 
-describe("team members", () => {
-  it("lists seeded members with active ones first", () => {
-    const members = db.listTeamMembers();
+describe("team members (db)", () => {
+  it("lists seeded members with active ones first", async () => {
+    const members = await db.listTeamMembers();
     expect(members.length).toBeGreaterThanOrEqual(3);
 
     const firstPendingIndex = members.findIndex((m) => m.status === "pending");
@@ -13,35 +13,35 @@ describe("team members", () => {
     }
   });
 
-  it("invites a new member as pending and derives a name", () => {
+  it("invites a new member as pending and derives a name", async () => {
     const email = `invitee-${Date.now()}@example.com`;
-    const member = db.inviteTeamMember({ email, role: "member" });
+    const member = await db.inviteTeamMember({ email, role: "member" });
 
     expect(member.status).toBe("pending");
     expect(member.email).toBe(email);
     expect(member.name.length).toBeGreaterThan(0);
-    expect(db.getTeamMemberByEmail(email)?.id).toBe(member.id);
+    expect((await db.getTeamMemberByEmail(email))?.id).toBe(member.id);
 
-    db.removeTeamMember(member.id); // cleanup
+    await db.removeTeamMember(member.id); // cleanup
   });
 
-  it("finds members by email case-insensitively", () => {
+  it("finds members by email case-insensitively", async () => {
     const email = `Case-${Date.now()}@Example.com`;
-    const member = db.inviteTeamMember({ email, role: "admin" });
+    const member = await db.inviteTeamMember({ email, role: "admin" });
 
-    expect(db.getTeamMemberByEmail(email.toLowerCase())?.id).toBe(member.id);
-    expect(db.getTeamMemberByEmail(email.toUpperCase())?.id).toBe(member.id);
+    expect((await db.getTeamMemberByEmail(email.toLowerCase()))?.id).toBe(member.id);
+    expect((await db.getTeamMemberByEmail(email.toUpperCase()))?.id).toBe(member.id);
 
-    db.removeTeamMember(member.id); // cleanup
+    await db.removeTeamMember(member.id); // cleanup
   });
 
-  it("removes a member", () => {
-    const member = db.inviteTeamMember({
+  it("removes a member", async () => {
+    const member = await db.inviteTeamMember({
       email: `remove-${Date.now()}@example.com`,
       role: "member",
     });
-    expect(db.removeTeamMember(member.id)).toBe(true);
-    expect(db.getTeamMemberByEmail(member.email)).toBeUndefined();
-    expect(db.removeTeamMember(member.id)).toBe(false); // already gone
+    expect(await db.removeTeamMember(member.id)).toBe(true);
+    expect(await db.getTeamMemberByEmail(member.email)).toBeUndefined();
+    expect(await db.removeTeamMember(member.id)).toBe(false); // already gone
   });
 });

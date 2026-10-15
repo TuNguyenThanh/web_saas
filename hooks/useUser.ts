@@ -49,13 +49,23 @@ export function useUser() {
   }
 
   async function changePlan(plan: Plan) {
-    await patchUser(async () => {
-      const { user: updated } = await apiRequest<{ user: PublicUser }>(
-        "/api/billing",
-        { method: "POST", body: { plan } },
-      );
-      return updated;
-    }, { plan });
+    const res = await apiRequest<{ url?: string; user?: PublicUser }>(
+      "/api/billing",
+      { method: "POST", body: { plan } },
+    );
+
+    // Stripe configured → redirect to the hosted Checkout page; the webhook
+    // applies the plan after payment.
+    if (res.url) {
+      window.location.href = res.url;
+      return;
+    }
+
+    // Direct update (no Stripe, or a downgrade to free).
+    if (res.user) {
+      await mutate({ user: res.user }, { revalidate: false });
+      router.refresh();
+    }
   }
 
   return { user, error, isLoading, updateProfile, changePlan };

@@ -10,7 +10,7 @@ export async function GET() {
   if (!current) {
     return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
   }
-  return NextResponse.json({ members: db.listTeamMembers() });
+  return NextResponse.json({ members: await db.listTeamMembers() });
 }
 
 /** Invite a new team member (status: pending). */
@@ -24,14 +24,14 @@ export async function POST(request: Request) {
   if (parsed.error) return parsed.error;
   const { email, role } = parsed.data;
 
-  if (db.getTeamMemberByEmail(email)) {
+  if (await db.getTeamMemberByEmail(email)) {
     return NextResponse.json(
       { error: "That person is already on the team." },
       { status: 409 },
     );
   }
 
-  const member = db.inviteTeamMember({ email, role });
+  const member = await db.inviteTeamMember({ email, role });
   return NextResponse.json({ member }, { status: 201 });
 }
 
@@ -47,7 +47,7 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "Member id is required." }, { status: 400 });
   }
 
-  const member = db.listTeamMembers().find((m) => m.id === id);
+  const member = (await db.listTeamMembers()).find((m) => m.id === id);
   if (!member) {
     return NextResponse.json({ error: "Member not found." }, { status: 404 });
   }
@@ -55,6 +55,6 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "The owner cannot be removed." }, { status: 403 });
   }
 
-  db.removeTeamMember(id);
+  await db.removeTeamMember(id);
   return NextResponse.json({ ok: true });
 }

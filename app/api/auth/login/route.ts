@@ -10,7 +10,7 @@ export async function POST(request: Request) {
   if (parsed.error) return parsed.error;
   const { email, password } = parsed.data;
 
-  const user = db.getUserByEmail(email);
+  const user = await db.getUserByEmail(email);
   // Same error for unknown email and wrong password to avoid user enumeration.
   if (!user || !verifyPassword(password, user.passwordHash)) {
     return NextResponse.json({ error: "Invalid email or password." }, { status: 401 });

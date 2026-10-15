@@ -12,17 +12,30 @@
     "test:watch": "jest --watch",
     "test:integration": "jest tests/integration",
     "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui"
+    "test:e2e:ui": "playwright test --ui",
+    "lighthouse": "lhci autorun",
+    "postinstall": "prisma generate",
+    "db:push": "prisma db push",
+    "db:seed": "prisma db seed",
+    "db:reset": "prisma db push --force-reset && prisma db seed",
+    "db:studio": "prisma studio"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@prisma/client": "^6.2.1",
     "next": "^15.5.28",
     "react": "19.0.0",
     "react-dom": "19.0.0",
+    "stripe": "^17.7.0",
     "swr": "^2.3.3",
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.10.1",
     "@eslint/eslintrc": "^3.3.7",
+    "@lhci/cli": "^0.14.0",
     "@playwright/test": "^1.64.1",
     "@swc/core": "^1.16.18",
     "@swc/jest": "^0.2.39",
@@ -34,7 +47,9 @@
     "eslint": "^9.39.5",
     "eslint-config-next": "^15.5.28",
     "jest": "^30.5.2",
+    "prisma": "^6.2.1",
     "tailwindcss": "^4.3.3",
+    "tsx": "^4.19.2",
     "typescript": "5.7.3"
   }
 }

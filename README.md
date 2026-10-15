@@ -14,10 +14,12 @@ routes, a full test suite (Jest + Playwright), CI, and a configured **AI-native 
 | **Design system** | Shared UI primitives (`Button`, `Input`/`Field`, `Card`, `Badge`, `Alert`) in `components/ui`, with a live reference page at `/components`. |
 | **Authentication** | Email + password sign-up/login. scrypt-hashed passwords and signed, `httpOnly` session cookies. No external auth dependencies. |
 | **Protected dashboard** | App shell with sidebar nav + Overview, Settings, and Billing pages. Edge middleware for fast redirects + authoritative server-side session checks. |
-| **API routes** | Typed Next.js route handlers: auth (signup/login/logout/me), profile, and billing. |
+| **API routes** | Typed Next.js route handlers (Zod-validated): auth (signup/login/logout/me), profile, team, and billing. |
+| **Database** | Prisma ORM + SQLite (local file, zero setup). Async data layer in `lib/db.ts`; swap to Postgres by changing the schema. |
+| **Data layer** | SWR client cache with optimistic mutations + SSR-seeded fallback (`hooks/`). |
 | **Billing-ready** | End-to-end plan management, with a clear drop-in point for Stripe Checkout + webhooks. |
-| **Testing** | Jest unit tests for auth primitives + Playwright E2E for the core user journeys. |
-| **CI** | GitHub Actions running typecheck, lint, unit, and E2E on every push/PR. |
+| **Testing** | Jest unit + integration (against a seeded SQLite test DB), Playwright E2E, and axe accessibility scans. |
+| **CI** | GitHub Actions: typecheck, lint, unit, E2E, and Lighthouse budgets on every push/PR. |
 | **AI-native setup** | Agent config for Claude Code, Cursor, and Copilot + a reusable prompt library. |
 
 ---
@@ -26,7 +28,9 @@ routes, a full test suite (Jest + Playwright), CI, and a configured **AI-native 
 
 ```bash
 npm install
-cp .env.example .env        # then set SESSION_SECRET
+cp .env.example .env        # then set SESSION_SECRET (DATABASE_URL has a default)
+npm run db:push             # create the SQLite schema
+npm run db:seed             # seed the demo user + team
 npm run dev
 ```
 
@@ -39,7 +43,7 @@ A demo user is seeded so you can log in immediately:
 - **Email:** `demo@acme.com`
 - **Password:** `password123`
 
-> Note: data is stored **in memory**, so it resets on server restart (the demo user is re-seeded).
+> Note: data is stored in a local **SQLite** file (`prisma/dev.db`) via Prisma. Run `npm run db:reset` to wipe and re-seed it.
 
 ---
 
@@ -56,7 +60,9 @@ app/
 components/            shared UI (Button, AuthForm, DashboardNav, PlanSelector, Logo, …)
 lib/
   auth.ts              password hashing (scrypt) + session token signing (HMAC)
-  db.ts                in-memory data store + seeded demo user (swap for a real DB here)
+  db.ts                async data access layer over Prisma (the only ORM-aware module)
+  prisma.ts            PrismaClient singleton
+  seed.ts              seedDatabase() — demo user + team members
   session.ts           cookie helpers + getCurrentUser()
 middleware.ts          edge guard for /dashboard/* (cookie-presence check)
 tests/
@@ -157,13 +163,14 @@ npm run typecheck && npm run build && npm test && npm run test:e2e
 
 ## Going to production
 
-The starter stores users **in memory**, so data resets when the server restarts. To make it real:
+The starter uses Prisma + **SQLite** (a local file). To make it production-ready:
 
-1. **Database** — replace `lib/db.ts` with Prisma/Drizzle (the rest of the app only depends on the
-   exported `db` functions, so callers don't change). See prompt template #3 in `docs/ai/prompts.md`.
+1. **Database** — point Prisma at Postgres (change `provider`/`url` in `prisma/schema.prisma`, then
+   `npm run db:push`). The app only depends on the async `db` functions in `lib/db.ts`, so callers
+   don't change.
 2. **Payments** — update `app/api/billing/route.ts` to create a Stripe Checkout session and set the
    plan from a webhook.
-3. **Secrets** — set a strong `SESSION_SECRET` in your environment.
+3. **Secrets** — set a strong `SESSION_SECRET` and a real `DATABASE_URL` in your environment.
 
 ---
 
