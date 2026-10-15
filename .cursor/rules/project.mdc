@@ -1,0 +1,32 @@
+---
+description: Nimbus SaaS starter — project conventions for AI-assisted edits
+alwaysApply: true
+---
+
+# Nimbus — Cursor project rules
+
+Full context: see `CLAUDE.md` (canonical) and `AGENTS.md`.
+
+## Stack
+- Next.js 15 App Router, React 19, TypeScript (strict), Tailwind CSS v4.
+- Tailwind config is in `app/globals.css` via `@theme` — there is no `tailwind.config` file.
+
+## Rules
+- Prefer **Server Components**. Add `"use client"` only for state/effects/browser events.
+- Authorization: middleware (`middleware.ts`) only checks cookie *presence*. The
+  authoritative check is `getCurrentUser()` in `app/dashboard/layout.tsx` and in
+  every API route — always use it for protected server logic.
+- Never return `passwordHash` to the client — map users through `toPublicUser()`.
+- All persistence goes through the `db` object in `lib/db.ts` (the swap-in seam for a real DB).
+- API route handlers: validate input and return `NextResponse.json({ error }, { status })`.
+  Keep auth errors generic (no user enumeration).
+- Use the `@/*` import alias.
+- Support light and dark mode; brand colors are `brand-50..900`.
+- Don't add dependencies without a clear reason (auth is intentionally dep-free).
+
+## Before finishing an edit
+Run and keep green:
+```
+npm run typecheck && npm run build && npm test && npm run test:e2e
+```
+Review generated code for authz, secret handling, input validation, and performance.
