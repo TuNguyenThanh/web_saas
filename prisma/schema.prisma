@@ -1,0 +1,31 @@
+// Prisma schema — the real database behind the app.
+// SQLite keeps setup to zero (a local file); swap `provider`/`url` for Postgres
+// in production. SQLite has no native enums, so plan/role/status are strings
+// validated by the app's Zod schemas (lib/schemas.ts).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  plan         String   @default("free")
+  createdAt    DateTime @default(now())
+}
+
+model TeamMember {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  role      String
+  status    String
+  invitedAt DateTime @default(now())
+}

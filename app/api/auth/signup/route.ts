@@ -10,14 +10,14 @@ export async function POST(request: Request) {
   if (parsed.error) return parsed.error;
   const { name, email, password } = parsed.data;
 
-  if (db.getUserByEmail(email)) {
+  if (await db.getUserByEmail(email)) {
     return NextResponse.json(
       { error: "An account with that email already exists." },
       { status: 409 },
     );
   }
 
-  const user = db.createUser({ name, email, passwordHash: hashPassword(password) });
+  const user = await db.createUser({ name, email, passwordHash: hashPassword(password) });
   await setSessionCookie(user.id);
 
   return NextResponse.json({ user: toPublicUser(user) }, { status: 201 });

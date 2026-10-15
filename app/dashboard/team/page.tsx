@@ -9,7 +9,7 @@ export default async function TeamPage() {
   const user = await getCurrentUser();
   if (!user) return null;
 
-  const members = db.listTeamMembers();
+  const members = await db.listTeamMembers();
 
   return (
     <div className="space-y-8">

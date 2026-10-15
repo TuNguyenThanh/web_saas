@@ -6,6 +6,12 @@ on:
   pull_request:
     branches: [main]
 
+# Jest and Playwright each manage their own SQLite file (test.db / e2e.db);
+# this default covers the app at build/runtime. `postinstall` runs
+# `prisma generate` on every `npm ci`.
+env:
+  DATABASE_URL: "file:./dev.db"
+
 jobs:
   quality:
     name: Lint, typecheck & unit tests
@@ -38,4 +44,25 @@ jobs:
         with:
           name: playwright-report
           path: playwright-report/
+          retention-days: 7
+
+  lighthouse:
+    name: Lighthouse CI (performance & a11y budgets)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run db:push
+      - run: npm run db:seed
+      - run: npm run build
+      - run: npm run lighthouse
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: lighthouse-report
+          path: .lighthouseci/
           retention-days: 7

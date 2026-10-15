@@ -14,7 +14,7 @@ export async function PATCH(request: Request) {
   if (parsed.error) return parsed.error;
   const { name } = parsed.data;
 
-  const updated = db.updateUser(current.id, { name });
+  const updated = await db.updateUser(current.id, { name });
   if (!updated) {
     return NextResponse.json({ error: "User not found." }, { status: 404 });
   }
