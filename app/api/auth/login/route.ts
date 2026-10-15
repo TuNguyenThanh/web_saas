@@ -1,25 +1,14 @@
 import { NextResponse } from "next/server";
 import { verifyPassword } from "@/lib/auth";
 import { db, toPublicUser } from "@/lib/db";
+import { loginSchema } from "@/lib/schemas";
 import { setSessionCookie } from "@/lib/session";
+import { parseBody } from "@/lib/validation";
 
 export async function POST(request: Request) {
-  let body: { email?: string; password?: string };
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
-  }
-
-  const email = body.email?.trim().toLowerCase();
-  const password = body.password ?? "";
-
-  if (!email || !password) {
-    return NextResponse.json(
-      { error: "Email and password are required." },
-      { status: 400 },
-    );
-  }
+  const parsed = await parseBody(request, loginSchema);
+  if (parsed.error) return parsed.error;
+  const { email, password } = parsed.data;
 
   const user = db.getUserByEmail(email);
   // Same error for unknown email and wrong password to avoid user enumeration.

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button, Field, Input } from "@/components/ui";
+import { updateProfileSchema, validate } from "@/lib/schemas";
 import { useUser } from "@/hooks/useUser";
 
 export function ProfileForm({
@@ -18,11 +19,17 @@ export function ProfileForm({
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setLoading(true);
     setMessage(null);
 
+    const result = validate(updateProfileSchema, { name });
+    if (!result.success) {
+      setMessage(result.error);
+      return;
+    }
+
+    setLoading(true);
     try {
-      await updateProfile(name);
+      await updateProfile(result.data.name);
       setMessage("Profile updated.");
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "Could not update profile.");

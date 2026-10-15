@@ -31,6 +31,8 @@ components/         feature UI (AuthForm, DashboardNav, PlanSelector, …)
   ui/              design system — shared primitives (Button, Input/Field, Card, Badge, Alert); barrel export at @/components/ui
 hooks/             client data layer — SWR hooks (useUser, useTeam) with optimistic mutations
 lib/
+  schemas.ts       Zod validation schemas + inferred types (shared client/server)
+  validation.ts    parseBody() — validate a request body against a schema in routes
   fetcher.ts       jsonFetcher (SWR) + apiRequest (mutations) + ApiError
   auth.ts          password hashing + session token signing (pure, unit-tested)
   db.ts            in-memory store + seeded demo user (swap for a real DB here)
@@ -47,6 +49,7 @@ tests/e2e/         Playwright
 - **Never send `passwordHash` to the client.** Always map users through `toPublicUser()` (`lib/db.ts`).
 - **Data access goes through the `db` object** in `lib/db.ts` — don't reach into the store directly. This is the seam for swapping in Prisma/Drizzle later.
 - **API routes:** validate input, return `NextResponse.json({ error }, { status })` on failure. Keep auth errors generic (no user enumeration — see `app/api/auth/login/route.ts`).
+- **One validation contract (Zod).** Request shapes live as Zod schemas in `lib/schemas.ts` (the single source of truth); types are *inferred* from them, never redeclared. Route handlers validate with `parseBody(request, schema)` (`lib/validation.ts`) **after** the auth check; client forms validate with `validate(schema, value)` before submitting. Add a field once, in the schema, and both sides pick it up.
 - **Imports:** use the `@/*` path alias (e.g. `import { db } from "@/lib/db"`).
 - **Styling:** Tailwind utilities; brand colors are `brand-50..900` (defined in `globals.css`). Support light + dark (`dark:` variants).
 - **Use the design system.** Build forms/surfaces from `@/components/ui` primitives (`Field`, `Input`, `Select`, `Card`, `SectionCard`, `StatCard`, `Badge`, `Alert`, `Button`) instead of re-writing raw markup. See the live reference at `/components`. Add new shared primitives there, not inline.
