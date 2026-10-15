@@ -1,8 +1,8 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button, Field, Input } from "@/components/ui";
+import { useUser } from "@/hooks/useUser";
 
 export function ProfileForm({
   initialName,
@@ -11,7 +11,7 @@ export function ProfileForm({
   initialName: string;
   email: string;
 }) {
-  const router = useRouter();
+  const { updateProfile } = useUser();
   const [name, setName] = useState(initialName);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -21,19 +21,13 @@ export function ProfileForm({
     setLoading(true);
     setMessage(null);
 
-    const res = await fetch("/api/profile", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name }),
-    });
-
-    setLoading(false);
-    if (res.ok) {
+    try {
+      await updateProfile(name);
       setMessage("Profile updated.");
-      router.refresh();
-    } else {
-      const data = await res.json().catch(() => ({}));
-      setMessage(data.error || "Could not update profile.");
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : "Could not update profile.");
+    } finally {
+      setLoading(false);
     }
   }
 
