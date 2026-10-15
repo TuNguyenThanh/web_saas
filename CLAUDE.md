@@ -27,7 +27,8 @@ app/
   api/             route handlers: auth (signup/login/logout/me), profile, billing
   page.tsx         marketing landing page
   layout.tsx       root layout (<body suppressHydrationWarning> for extensions)
-components/         shared UI (Button, AuthForm, DashboardNav, PlanSelector, …)
+components/         feature UI (AuthForm, DashboardNav, PlanSelector, …)
+  ui/              design system — shared primitives (Button, Input/Field, Card, Badge, Alert); barrel export at @/components/ui
 lib/
   auth.ts          password hashing + session token signing (pure, unit-tested)
   db.ts            in-memory store + seeded demo user (swap for a real DB here)
@@ -46,6 +47,7 @@ tests/e2e/         Playwright
 - **API routes:** validate input, return `NextResponse.json({ error }, { status })` on failure. Keep auth errors generic (no user enumeration — see `app/api/auth/login/route.ts`).
 - **Imports:** use the `@/*` path alias (e.g. `import { db } from "@/lib/db"`).
 - **Styling:** Tailwind utilities; brand colors are `brand-50..900` (defined in `globals.css`). Support light + dark (`dark:` variants).
+- **Use the design system.** Build forms/surfaces from `@/components/ui` primitives (`Field`, `Input`, `Select`, `Card`, `SectionCard`, `StatCard`, `Badge`, `Alert`, `Button`) instead of re-writing raw markup. See the live reference at `/components`. Add new shared primitives there, not inline.
 - **No new dependencies** without a clear reason — the auth layer is intentionally dependency-free.
 
 ## Quality gates — ALWAYS run before accepting a change

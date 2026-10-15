@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { MemberRole, TeamMember } from "@/lib/db";
-import { Button } from "./Button";
+import { Alert, Badge, Button, Card, Field, Input, Select } from "@/components/ui";
 
 const ROLES: MemberRole[] = ["admin", "member"];
 
@@ -44,60 +44,47 @@ export function TeamManager({ initialMembers }: { initialMembers: TeamMember[] }
     }
   }
 
-  const inputClass =
-    "w-full rounded-lg border border-black/10 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 dark:border-white/15 dark:bg-white/5 dark:text-white";
-
   return (
     <div className="space-y-6">
       {/* Invite form */}
-      <form
-        onSubmit={invite}
-        className="flex flex-col gap-3 rounded-2xl border border-black/5 bg-white p-5 shadow-sm sm:flex-row sm:items-end dark:border-white/10 dark:bg-white/5"
-      >
-        <div className="flex-1">
-          <label htmlFor="invite-email" className="mb-1.5 block text-sm font-medium">
-            Invite by email
-          </label>
-          <input
-            id="invite-email"
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="teammate@company.com"
-            className={inputClass}
-          />
-        </div>
-        <div className="sm:w-40">
-          <label htmlFor="invite-role" className="mb-1.5 block text-sm font-medium">
-            Role
-          </label>
-          <select
-            id="invite-role"
-            value={role}
-            onChange={(e) => setRole(e.target.value as MemberRole)}
-            className={inputClass}
-          >
-            {ROLES.map((r) => (
-              <option key={r} value={r}>
-                {r[0].toUpperCase() + r.slice(1)}
-              </option>
-            ))}
-          </select>
-        </div>
-        <Button type="submit" disabled={loading}>
-          {loading ? "Sending…" : "Send invite"}
-        </Button>
-      </form>
+      <Card padding="sm">
+        <form
+          onSubmit={invite}
+          className="flex flex-col gap-3 sm:flex-row sm:items-end"
+        >
+          <Field id="invite-email" label="Invite by email" className="flex-1">
+            <Input
+              id="invite-email"
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="teammate@company.com"
+            />
+          </Field>
+          <Field id="invite-role" label="Role" className="sm:w-40">
+            <Select
+              id="invite-role"
+              value={role}
+              onChange={(e) => setRole(e.target.value as MemberRole)}
+            >
+              {ROLES.map((r) => (
+                <option key={r} value={r}>
+                  {r[0].toUpperCase() + r.slice(1)}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <Button type="submit" disabled={loading}>
+            {loading ? "Sending…" : "Send invite"}
+          </Button>
+        </form>
+      </Card>
 
-      {error && (
-        <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-500/10 dark:text-red-400">
-          {error}
-        </p>
-      )}
+      {error && <Alert tone="error">{error}</Alert>}
 
       {/* Members list */}
-      <div className="overflow-hidden rounded-2xl border border-black/5 bg-white shadow-sm dark:border-white/10 dark:bg-white/5">
+      <Card padding="none" className="overflow-hidden">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-black/5 text-left text-xs uppercase tracking-wide text-gray-500 dark:border-white/10">
@@ -116,15 +103,12 @@ export function TeamManager({ initialMembers }: { initialMembers: TeamMember[] }
                 </td>
                 <td className="px-5 py-3 capitalize text-gray-600 dark:text-gray-300">{m.role}</td>
                 <td className="px-5 py-3">
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-xs font-semibold capitalize ${
-                      m.status === "active"
-                        ? "bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-400"
-                        : "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400"
-                    }`}
+                  <Badge
+                    tone={m.status === "active" ? "success" : "warning"}
+                    className="capitalize"
                   >
                     {m.status}
-                  </span>
+                  </Badge>
                 </td>
                 <td className="px-5 py-3 text-right">
                   {m.role !== "owner" && (
@@ -141,7 +125,7 @@ export function TeamManager({ initialMembers }: { initialMembers: TeamMember[] }
             ))}
           </tbody>
         </table>
-      </div>
+      </Card>
     </div>
   );
 }

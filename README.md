@@ -11,6 +11,7 @@ routes, a full test suite (Jest + Playwright), CI, and a configured **AI-native 
 | Area | What's included |
 | --- | --- |
 | **Marketing site** | Landing page with hero, features, pricing, and FAQ — light/dark mode. |
+| **Design system** | Shared UI primitives (`Button`, `Input`/`Field`, `Card`, `Badge`, `Alert`) in `components/ui`, with a live reference page at `/components`. |
 | **Authentication** | Email + password sign-up/login. scrypt-hashed passwords and signed, `httpOnly` session cookies. No external auth dependencies. |
 | **Protected dashboard** | App shell with sidebar nav + Overview, Settings, and Billing pages. Edge middleware for fast redirects + authoritative server-side session checks. |
 | **API routes** | Typed Next.js route handlers: auth (signup/login/logout/me), profile, and billing. |

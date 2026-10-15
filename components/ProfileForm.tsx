@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Button } from "./Button";
+import { Button, Field, Input } from "@/components/ui";
 
 export function ProfileForm({
   initialName,
@@ -37,31 +37,24 @@ export function ProfileForm({
     }
   }
 
-  const inputClass =
-    "w-full rounded-lg border border-black/10 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 disabled:opacity-60 dark:border-white/15 dark:bg-white/5 dark:text-white";
-
   return (
     <form onSubmit={onSubmit} className="max-w-md space-y-4">
-      <div>
-        <label htmlFor="name" className="mb-1.5 block text-sm font-medium">
-          Full name
-        </label>
-        <input
+      <Field id="name" label="Full name">
+        <Input
           id="name"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className={inputClass}
           required
         />
-      </div>
+      </Field>
 
-      <div>
-        <label htmlFor="email" className="mb-1.5 block text-sm font-medium">
-          Email
-        </label>
-        <input id="email" value={email} disabled className={inputClass} />
-        <p className="mt-1 text-xs text-gray-500">Email cannot be changed in this demo.</p>
-      </div>
+      <Field
+        id="email"
+        label="Email"
+        hint="Email cannot be changed in this demo."
+      >
+        <Input id="email" value={email} disabled />
+      </Field>
 
       <div className="flex items-center gap-3">
         <Button type="submit" disabled={loading || name.trim() === initialName}>

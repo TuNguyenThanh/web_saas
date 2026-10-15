@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Card, StatCard } from "@/components/ui";
 import { getCurrentUser } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Overview" };
@@ -34,19 +35,12 @@ export default async function DashboardPage() {
       {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((s) => (
-          <div
-            key={s.label}
-            className="rounded-2xl border border-black/5 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/5"
-          >
-            <p className="text-sm text-gray-500">{s.label}</p>
-            <p className="mt-2 text-3xl font-bold tracking-tight">{s.value}</p>
-            <p className="mt-1 text-xs text-gray-500">{s.change}</p>
-          </div>
+          <StatCard key={s.label} label={s.label} value={s.value} sub={s.change} />
         ))}
       </div>
 
       {/* Activity */}
-      <div className="rounded-2xl border border-black/5 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-white/5">
+      <Card>
         <h2 className="text-lg font-semibold">Recent activity</h2>
         <ul className="mt-4 divide-y divide-black/5 dark:divide-white/10">
           {activity.map((a, i) => (
@@ -59,7 +53,7 @@ export default async function DashboardPage() {
             </li>
           ))}
         </ul>
-      </div>
+      </Card>
     </div>
   );
 }
