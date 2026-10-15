@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { DashboardNav } from "@/components/DashboardNav";
 import { LogoutButton } from "@/components/LogoutButton";
 import { Logo } from "@/components/Logo";
+import { SWRProvider } from "@/components/providers/SWRProvider";
 import { getCurrentUser } from "@/lib/session";
 
 export default async function DashboardLayout({
@@ -15,6 +16,7 @@ export default async function DashboardLayout({
   if (!user) redirect("/login?next=/dashboard");
 
   return (
+    <SWRProvider fallback={{ "/api/auth/me": { user } }}>
     <div className="flex min-h-screen">
       {/* Sidebar */}
       <aside className="hidden w-64 shrink-0 flex-col border-r border-black/5 bg-white/50 p-4 md:flex dark:border-white/10 dark:bg-white/5">
@@ -48,5 +50,6 @@ export default async function DashboardLayout({
         <main className="flex-1 p-6 sm:p-8">{children}</main>
       </div>
     </div>
+    </SWRProvider>
   );
 }

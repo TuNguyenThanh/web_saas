@@ -3,11 +3,12 @@
 import { useState } from "react";
 import type { MemberRole, TeamMember } from "@/lib/db";
 import { Alert, Badge, Button, Card, Field, Input, Select } from "@/components/ui";
+import { useTeam } from "@/hooks/useTeam";
 
 const ROLES: MemberRole[] = ["admin", "member"];
 
 export function TeamManager({ initialMembers }: { initialMembers: TeamMember[] }) {
-  const [members, setMembers] = useState(initialMembers);
+  const { members, invite: inviteMember, remove } = useTeam(initialMembers);
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<MemberRole>("member");
   const [loading, setLoading] = useState(false);
@@ -18,29 +19,14 @@ export function TeamManager({ initialMembers }: { initialMembers: TeamMember[] }
     setError(null);
     setLoading(true);
 
-    const res = await fetch("/api/team", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, role }),
-    });
-    const data = await res.json();
-    setLoading(false);
-
-    if (!res.ok) {
-      setError(data.error || "Could not send the invite.");
-      return;
-    }
-    setMembers((prev) => [...prev, data.member]);
-    setEmail("");
-    setRole("member");
-  }
-
-  async function remove(id: string) {
-    const res = await fetch(`/api/team?id=${encodeURIComponent(id)}`, {
-      method: "DELETE",
-    });
-    if (res.ok) {
-      setMembers((prev) => prev.filter((m) => m.id !== id));
+    try {
+      await inviteMember(email, role);
+      setEmail("");
+      setRole("member");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not send the invite.");
+    } finally {
+      setLoading(false);
     }
   }
 

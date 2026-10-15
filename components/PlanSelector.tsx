@@ -1,10 +1,10 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { Plan } from "@/lib/db";
 import { Badge, Button, Card } from "@/components/ui";
 import { cx } from "@/lib/cx";
+import { useUser } from "@/hooks/useUser";
 
 const PLANS: { id: Plan; name: string; price: string; features: string[] }[] = [
   { id: "free", name: "Free", price: "$0/mo", features: ["3 projects", "Community support"] },
@@ -18,28 +18,29 @@ const PLANS: { id: Plan; name: string; price: string; features: string[] }[] = [
 ];
 
 export function PlanSelector({ currentPlan }: { currentPlan: Plan }) {
-  const router = useRouter();
+  const { user, changePlan } = useUser();
   const [pending, setPending] = useState<Plan | null>(null);
 
+  // Prefer the live cached plan; fall back to the server-rendered prop.
+  const activePlan = user?.plan ?? currentPlan;
+
   async function choose(plan: Plan) {
-    if (plan === currentPlan) return;
+    if (plan === activePlan) return;
     setPending(plan);
 
-    // In a real app this would open Stripe Checkout; here we update directly.
-    const res = await fetch("/api/billing", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ plan }),
-    });
-
-    setPending(null);
-    if (res.ok) router.refresh();
+    // In a real app this would open Stripe Checkout; here we update directly
+    // through the data layer (optimistic cache update + server revalidation).
+    try {
+      await changePlan(plan);
+    } finally {
+      setPending(null);
+    }
   }
 
   return (
     <div className="grid gap-4 lg:grid-cols-3">
       {PLANS.map((plan) => {
-        const isCurrent = plan.id === currentPlan;
+        const isCurrent = plan.id === activePlan;
         return (
           <Card
             key={plan.id}
