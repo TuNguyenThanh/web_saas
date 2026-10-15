@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { db, type MemberRole } from "@/lib/db";
+import { db } from "@/lib/db";
+import { inviteMemberSchema } from "@/lib/schemas";
 import { getCurrentUser } from "@/lib/session";
-
-const VALID_ROLES: MemberRole[] = ["owner", "admin", "member"];
+import { parseBody } from "@/lib/validation";
 
 /** List team members. */
 export async function GET() {
@@ -20,22 +20,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
   }
 
-  let body: { email?: string; role?: string };
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
-  }
+  const parsed = await parseBody(request, inviteMemberSchema);
+  if (parsed.error) return parsed.error;
+  const { email, role } = parsed.data;
 
-  const email = body.email?.trim().toLowerCase();
-  const role = (body.role ?? "member") as MemberRole;
-
-  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return NextResponse.json({ error: "Please enter a valid email." }, { status: 400 });
-  }
-  if (!VALID_ROLES.includes(role)) {
-    return NextResponse.json({ error: "Unknown role." }, { status: 400 });
-  }
   if (db.getTeamMemberByEmail(email)) {
     return NextResponse.json(
       { error: "That person is already on the team." },

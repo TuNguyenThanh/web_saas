@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { MemberRole, TeamMember } from "@/lib/db";
 import { Alert, Badge, Button, Card, Field, Input, Select } from "@/components/ui";
+import { inviteMemberSchema, validate } from "@/lib/schemas";
 import { useTeam } from "@/hooks/useTeam";
 
 const ROLES: MemberRole[] = ["admin", "member"];
@@ -17,10 +18,16 @@ export function TeamManager({ initialMembers }: { initialMembers: TeamMember[] }
   async function invite(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
-    setLoading(true);
 
+    const result = validate(inviteMemberSchema, { email, role });
+    if (!result.success) {
+      setError(result.error);
+      return;
+    }
+
+    setLoading(true);
     try {
-      await inviteMember(email, role);
+      await inviteMember(result.data.email, result.data.role);
       setEmail("");
       setRole("member");
     } catch (err) {
